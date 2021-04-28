@@ -69,19 +69,4 @@ else if (!string.IsNullOrEmpty(fileTextContents))
         }
         await Task.CompletedTask;
     }
-
-    private string GetFileType(string name)
-    {
-        string result = "";
-        if (name.Contains("png") || name.Contains("jpg") || name.Contains("gif"))
-        {
-            result = "image";
-        }
-        else if (name.Contains("txt"))
-        {
-            result = "text";
-        }
-        return result;
-    }
-
 }
