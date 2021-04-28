@@ -1,0 +1,87 @@
+﻿@page "/uploadfile"
+
+@using System.IO
+
+<h1>Upload Files</h1>
+
+<p>A single file input that uploads automatically on file selection.  Images and Text files will be displayed on the page</p>
+
+<InputFile OnChange="@HandleSelection" />
+
+<p>@status</p>
+
+@if (!string.IsNullOrEmpty(imageDataURL))
+{
+    <img src="@imageDataURL" style="height:300px;width:300px" />
+}
+else if (!string.IsNullOrEmpty(fileTextContents))
+{
+    <pre>@fileTextContents</pre>
+}
+
+@code {
+    string status;
+    string imageDataURL = "";
+    string fileTextContents = "";
+
+    async Task HandleSelection(InputFileChangeEventArgs e)
+    {
+        imageDataURL = "";
+        fileTextContents = "";
+        var files = e.GetMultipleFiles(1);
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            if (file.Size < 512000)
+            {
+                //check to see if the file is an image or a text file
+
+                using (FileStream newFile = new FileStream("wwwroot\\uploads\\" + file.Name, FileMode.Create, FileAccess.Write))
+                {
+                    var ms = new MemoryStream();
+                    await new StreamContent(file.OpenReadStream()).CopyToAsync(ms);
+
+                    var fileContent = new StreamContent(file.OpenReadStream());
+                    ms.WriteTo(newFile);
+                }
+
+                var fileType = file.ContentType;
+                if (fileType.Contains("image"))
+                {
+                    //if successfull, load
+                    imageDataURL = "uploads\\" + file.Name;
+                }
+                else if (fileType.Contains("text"))
+                {
+                    using var reader = new StreamReader(file.OpenReadStream());
+                    fileTextContents = await reader.ReadToEndAsync();
+                }
+                status = $"Finished loading {file.Size} bytes from {file.Name}";
+            }
+            else
+            {
+                status = $"File is too large to upload:  {file.Size} bytes from {file.Name}";
+            }
+        }
+        else
+        {
+            status = $"Unable to find file";
+        }
+        await Task.CompletedTask;
+    }
+
+    private string GetFileType(string name)
+    {
+        string result = "";
+        if (name.Contains("png") || name.Contains("jpg") || name.Contains("gif"))
+        {
+            result = "image";
+        }
+        else if (name.Contains("txt"))
+        {
+            result = "text";
+        }
+        return result;
+    }
+
+}
